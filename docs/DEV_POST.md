@@ -8,7 +8,8 @@ tags: devchallenge, hf26challenge
 
 <!--
 DRAFT. Before publishing, replace:
-  - {{REPO_URL}}, {{DEMO_URL}}, {{DEVRELAY_SESSION}}
+  - {{DEMO_URL}} (and the /streak link below it)
+  - {{DEVRELAY_SESSION}}
   - {{EVAL_TABLE}} with the real output of `train/eval.py`
   - {{STREAK}} with the real number when you post
 -->
@@ -39,7 +40,7 @@ The public streak page: {{DEMO_URL}}/streak
 
 ## Code
 
-{{REPO_URL}}
+https://github.com/ravi-arnan/green-hour
 
 ## How I Built It
 

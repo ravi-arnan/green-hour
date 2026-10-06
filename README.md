@@ -56,10 +56,18 @@ green-hour/
 
 ## Deploy
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ravi-arnan/green-hour)
+
 Two ways, both on Render:
 
-1. **Blueprint** — point Render at this repo (`New → Blueprint`). It builds the `Dockerfile`, mounts a 5 GB disk at `/opt/data`, and provisions the static streak page.
-2. **Manual** — build the image, run it as a Docker web service with `HERMES_DASHBOARD=1`.
+1. **Blueprint** — click the button above, or point Render at this repo
+   (`New → Blueprint`). It reads `render.yaml`, builds the `Dockerfile`, mounts
+   a 5 GB disk at `/opt/data`, and provisions the static streak page.
+2. **Manual** — build the image, run it as a Docker web service with
+   `HERMES_DASHBOARD=1`.
+
+Either way, `docs/SETUP.md` is the runbook for the keys and the first-week
+configuration.
 
 Then, from the Hermes dashboard: add your LLM provider key, set the model, and paste your `TELEGRAM_BOT_TOKEN`.
 
