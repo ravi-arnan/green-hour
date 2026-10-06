@@ -93,6 +93,7 @@ Paste `eval.py`'s table into the post.
 
 ## 7. Publish the DEV post
 
-`docs/DEV_POST.md` is the draft. Fill `{{DEMO_URL}}`, `{{DEVRELAY_SESSION}}`
-and the eval table, then publish with the tags `devchallenge, hf26challenge`.
+`docs/DEV_POST.md` is the draft. The repo and demo URLs are already filled in;
+what remains is the `{{EVAL_TABLE}}` from step 6 and the `{{DEVRELAY_SESSION}}`
+embed. Publish with the tags `devchallenge, hf26challenge`.
 **Deadline: 11 October.**

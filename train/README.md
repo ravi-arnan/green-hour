@@ -19,16 +19,21 @@ export GREENHOUR_BASE_MODEL=qwen/qwen3-4b:free   # optional; the baseline
 
 ## Run
 
+Run these from the repository root. `--no-project` keeps `uv` from looking for
+a project file; `--python 3.12` is deliberate (see above).
+
 ```bash
-# 1. Build the dataset (deterministic; ~500 examples, 78% outdoor).
-uv run --with-requirements train/requirements.txt train/build_dataset.py --n 500
+# 1. Build the dataset (deterministic; ~500 examples, roughly 77% outdoor).
+uv run --no-project --python 3.12 --with-requirements train/requirements.txt \
+    train/build_dataset.py --n 500
 
 # 2. Fine-tune a LoRA adapter. Prints TINKER_MODEL_PATH when done.
-uv run --with-requirements train/requirements.txt \
+uv run --no-project --python 3.12 --with-requirements train/requirements.txt \
     train/train_tinker.py --base-model Qwen/Qwen3.5-4B --rank 16 --steps 300
 
 # 3. Compare against the baseline on the held-out split.
-uv run --with-requirements train/requirements.txt train/eval.py
+uv run --no-project --python 3.12 --with-requirements train/requirements.txt \
+    train/eval.py
 ```
 
 The adapter's job in production is the extraction step in the Worker

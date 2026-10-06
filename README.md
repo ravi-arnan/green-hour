@@ -10,6 +10,12 @@ The screen is the shortest part of the experience. That's the point.
 
 > Built for the DEV Challenge — *Hacktoberfest Open-Source AI, Week 1: Touch Grass*.
 
+**Live:** https://green-hour.raviarnankeren.workers.dev — the streak page, server-rendered from the journal.
+
+> Status: deployed and serving. The Telegram webhook and location are not yet
+> configured, so `/health` reports `telegram: false, location: false` and the
+> journal is empty. See [docs/SETUP.md](./docs/SETUP.md) for the remaining steps.
+
 ## How it works
 
 ```
@@ -79,7 +85,7 @@ Then set `GREENHOUR_LAT`, `GREENHOUR_LON`, `GREENHOUR_TZ` in `wrangler.toml` and
 
 ```bash
 curl "https://api.telegram.org/bot$TOKEN/setWebhook" \
-  -d "url=https://green-hour.<you>.workers.dev/telegram/$WEBHOOK_SECRET"
+  -d "url=https://green-hour.raviarnankeren.workers.dev/telegram/$WEBHOOK_SECRET"
 ```
 
 `docs/SETUP.md` is the full runbook, including the parts only you can do.
