@@ -1,4 +1,4 @@
-# Python
+# Python (the Tinker fine-tune scripts under train/)
 __pycache__/
 *.py[cod]
 .venv/
@@ -6,24 +6,21 @@ venv/
 *.egg-info/
 .pytest_cache/
 
+# Node / Cloudflare Workers
+node_modules/
+.wrangler/
+worker/.dev.vars
+.dev.vars
+
 # Env / secrets
 .env
 *.env
 !.env.example
 
-# Runtime data (the live journal lives on the Render disk, not in git).
-# web/data/journal.json is deliberately NOT ignored: it is the published
-# snapshot the static site serves.
+# Local databases (the real journal lives in D1)
 *.db
 *.sqlite
 *.sqlite3
-
-# Node
-node_modules/
-.next/
-out/
-web/.next
-web/out
 
 # OS / editor
 .DS_Store

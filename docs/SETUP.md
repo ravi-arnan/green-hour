@@ -1,125 +1,98 @@
 # Setup runbook
 
-Everything in the repo is built. What's left needs *your* accounts. This is
-the order that avoids rework.
+The Worker is already deployed and the database exists. What remains needs your
+Telegram account and your location. Written in the order that avoids rework.
 
-## 0. Prerequisites
+## Already done
 
-- A Render account (the Hermes image needs the **standard** plan, ~$25/mo — the
-  free plan cannot hold it).
-- A Telegram account.
-- A GitHub account (for the repo and for publishing the streak snapshot).
-
-## 1. Claim the partner credits first
-
-Do this before creating anything paid.
-
-```bash
-curl -fsSL https://devrelay.com/install.sh | sh
-```
-
-Restart your coding agent so it picks up DevRelay, then sign in with MLH and
-link your DEV account. Ask the agent:
-
-> What sponsor offers can I claim for Hacktoberfest?
-
-DevRelay exposes the offers as an MCP tool (`list_event_offers`) and will claim
-the Render / Tinker / Backboard / ElevenLabs credits with your OK. Confirm each
-one actually landed before you depend on it.
-
-## 2. Telegram bot
-
-1. Message [@BotFather](https://t.me/BotFather) → `/newbot` → copy the token
-   (`TELEGRAM_BOT_TOKEN`).
-2. Message [@userinfobot](https://t.me/userinfobot) → copy your numeric id
-   (`TELEGRAM_ALLOWED_USER_ID`). This keeps the agent from answering strangers.
-
-## 3. Model access
-
-- **OpenRouter** — create a key at [openrouter.ai/keys](https://openrouter.ai/keys)
-  (`OPENROUTER_API_KEY`). Free open-weight models are enough to run the agent
-  and to serve as the baseline in `eval.py`.
-- **Groq** — create a key at [console.groq.com](https://console.groq.com)
-  (`GROQ_API_KEY`). This hosts the open-weight Whisper model used for
-  transcription.
-- **Tinker** — create a key at
-  [tinker.thinkingmachines.ai/keys](https://tinker.thinkingmachines.ai/keys)
-  and set up billing (`TINKER_API_KEY`). Training fails without it.
-
-## 4. Fine-tune (before or after deploying — the agent falls back either way)
-
-```bash
-uv run --no-project --python 3.12 --with-requirements train/requirements.txt \
-    train/build_dataset.py --n 500
-uv run --no-project --python 3.12 --with-requirements train/requirements.txt \
-    train/train_tinker.py --base-model Qwen/Qwen3.5-4B --rank 16 --steps 300
-```
-
-Copy the printed `TINKER_MODEL_PATH` — that goes in the Render env vars below.
-
-Then produce the table for the post:
-
-```bash
-uv run --no-project --python 3.12 --with-requirements train/requirements.txt \
-    train/eval.py
-```
-
-## 5. Deploy on Render
-
-1. Push this repo to GitHub.
-2. Render → **New → Blueprint** → select the repo. It reads `render.yaml` and
-   creates the `hermes` web service (with a 5 GB disk) and the
-   `green-hour-streak` static site.
-3. Wait for the first build (~3–5 min; it pulls the Hermes image).
-4. Open the service URL. You should see the Hermes dashboard.
-
-## 6. Configure the agent
-
-In Render → your `hermes` service → **Environment**, set the `sync: false`
-values from `.env.example`:
-
-| Variable | Value |
+| Thing | Value |
 |---|---|
-| `GREENHOUR_LAT`, `GREENHOUR_LON`, `GREENHOUR_TZ` | your home coordinates |
-| `OPENROUTER_API_KEY` | step 3 |
-| `GROQ_API_KEY` | step 3 |
-| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_USER_ID` | step 2 |
-| `TINKER_API_KEY`, `TINKER_MODEL_PATH` | step 4 (optional but recommended) |
-| `GITHUB_TOKEN`, `GITHUB_REPO` | optional; needed for `--publish` |
-| `RENDER_MCP_API_KEY` | optional; use a **least-privileged** key |
+| Worker | `green-hour` → https://green-hour.raviarnankeren.workers.dev |
+| Cron | `0 * * * *` (hourly; the handler decides which local hours to nudge) |
+| D1 database | `green-hour` (`5356f4aa-8d25-476b-a061-4215541e85e2`), schema applied |
+| Bindings | `DB` (D1), `AI` (Workers AI) |
 
-Then, from the Hermes dashboard chat, ask it to confirm the setup:
+`GET /health` currently reports `telegram: false, location: false` — that is
+correct until you do the steps below.
 
-> What model are you running on, and are the Render tools available?
+## 1. Telegram bot
 
-### Lock the dashboard before you paste any keys
+1. Message [@BotFather](https://t.me/BotFather) → `/newbot` → copy the token.
+2. Message [@userinfobot](https://t.me/userinfobot) → copy your numeric id.
+   This is what stops the bot answering anyone else.
 
-Hermes' dashboard has **no authentication** — anyone who reaches the URL can
-read your provider keys and chat with the agent. Put an auth gateway or a
-private network (e.g. Tailscale) in front of it, or accept the risk only for a
-throwaway demo with low-privilege keys. Do not skip this.
+## 2. Your location
 
-## 7. Schedule the loop
+Set these in `worker/wrangler.toml` under `[vars]`, then redeploy:
 
-From the Hermes dashboard's cron surface, create three jobs (the exact schedule
-syntax lives in the Cron tab — use a five-field schedule):
+```toml
+GREENHOUR_LAT = "-33.8688"
+GREENHOUR_LON = "151.2093"
+GREENHOUR_TZ  = "Australia/Sydney"
+```
 
-| when | prompt |
-|---|---|
-| 07:30 daily | `Run the green-hour-nudge skill and send me the line it prints, verbatim.` |
-| 16:00 daily | `Run the green-hour-nudge skill and send me the line it prints, verbatim.` |
-| Mon 09:00 | `Run the grass-report skill and send me the weekly summary.` |
+`GREENHOUR_NUDGE_HOURS` defaults to `7,16` — the local hours you want nudging at.
+Cron fires hourly in UTC; the handler converts to your timezone and returns
+without doing anything outside those hours.
 
-## 8. Verify end to end
+## 3. Secrets
 
-1. Trigger the nudge job manually — the line should arrive in Telegram.
-2. Go outside and send the bot a voice note.
-3. You should get the "Logged walk … Streak: 1 day(s)" reply.
-4. Send something plainly indoors — it should *not* count.
-5. `grass-report --publish` (or let Monday's job run) and check the streak page.
+```bash
+cd worker
+npx wrangler secret put TELEGRAM_BOT_TOKEN
+npx wrangler secret put TELEGRAM_ALLOWED_USER_ID
+npx wrangler secret put TELEGRAM_WEBHOOK_SECRET   # any long random string
+npx wrangler deploy
+```
 
-## 9. Publish the DEV post
+## 4. Point Telegram at the Worker
 
-`docs/DEV_POST.md` is the draft. Fill the placeholders — repo URL, demo URL, the
-`eval.py` table, and the DevRelay session embed — then publish with the tags
-`devchallenge, hf26challenge`. **Deadline: 11 October.**
+The webhook path carries the secret, so a stranger POSTing to it is rejected
+with 403.
+
+```bash
+TOKEN=...                 # from BotFather
+SECRET=...                # the same value as TELEGRAM_WEBHOOK_SECRET
+curl "https://api.telegram.org/bot$TOKEN/setWebhook" \
+  -d "url=https://green-hour.raviarnankeren.workers.dev/telegram/$SECRET"
+```
+
+Check it took:
+
+```bash
+curl "https://api.telegram.org/bot$TOKEN/getWebhookInfo"
+```
+
+## 5. Verify end to end
+
+1. `curl https://green-hour.raviarnankeren.workers.dev/health` → `telegram: true, location: true`.
+2. Trigger the nudge without waiting for the hour — set `GREENHOUR_NUDGE_HOURS`
+   to the current local hour, redeploy, and wait for the next hour boundary
+   (cron propagation can take up to 15 minutes after a change).
+   `npx wrangler tail` shows the invocation.
+3. Go outside and send the bot a voice note. Expect
+   `Logged walk — "…". Streak: 1 day. 🌿`
+4. Send something plainly indoors ("I'm at my desk, the fan is humming") →
+   it should reply that it isn't counting, and the streak should not move.
+5. Open https://green-hour.raviarnankeren.workers.dev/ — the entry should appear.
+
+While testing, watch the **CPU time** in `wrangler tail`. The free plan allows
+10 ms per invocation and this design is meant to sit well inside it. If a
+handler starts reporting `exceededCpu`, the first thing to trim is the
+Open-Meteo payload in `fetchHourly`.
+
+## 6. Fine-tune (optional, but it's the Tinker prize category)
+
+```bash
+uv run --no-project --python 3.12 --with-requirements train/requirements.txt train/build_dataset.py --n 500
+uv run --no-project --python 3.12 --with-requirements train/requirements.txt train/train_tinker.py --steps 300
+uv run --no-project --python 3.12 --with-requirements train/requirements.txt train/eval.py
+```
+
+Paste `eval.py`'s table into the post.
+
+## 7. Publish the DEV post
+
+`docs/DEV_POST.md` is the draft. Fill `{{DEMO_URL}}`, `{{DEVRELAY_SESSION}}`
+and the eval table, then publish with the tags `devchallenge, hf26challenge`.
+**Deadline: 11 October.**

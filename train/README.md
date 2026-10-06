@@ -14,7 +14,7 @@ Use Python 3.12 (3.14 is too new for several ML wheels).
 ```bash
 export TINKER_API_KEY=...        # tinker.thinkingmachines.ai
 export OPENROUTER_API_KEY=...    # for the baseline in eval.py
-export GREENHOUR_TZ=Pacific/Auckland
+export GREENHOUR_BASE_MODEL=qwen/qwen3-4b:free   # optional; the baseline
 ```
 
 ## Run
@@ -31,9 +31,13 @@ uv run --with-requirements train/requirements.txt \
 uv run --with-requirements train/requirements.txt train/eval.py
 ```
 
-Point the running agent at the adapter by setting `TINKER_MODEL_PATH` to the
-value from step 2. `log-outside` picks it up automatically (`--backend auto`),
-and falls back to OpenRouter if Tinker is unreachable.
+The adapter's job in production is the extraction step in the Worker
+(`worker/src/extract.ts`), which runs a Workers AI open-weight model by default
+and needs no key at all. The tuned adapter is the measured study behind the
+[Tinker](https://thinkingmachines.ai/tinker/) prize entry: `eval.py` reports how
+much the fine-tune buys over the hosted baseline. To sample from the adapter
+directly, point `extract_tinker()` in `common.py` at the `model_path` printed by
+`train_tinker.py`.
 
 ## What the numbers mean
 

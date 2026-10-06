@@ -26,9 +26,9 @@ import random
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "skills" / "_lib"))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from greenhour.schema import FieldEntry  # noqa: E402
+from common import FieldEntry  # noqa: E402
 
 FILLERS = ["um", "uh", "like", "you know", "so", "yeah", "okay so", "i mean"]
 HEDGES = ["i think", "maybe", "pretty sure", "not sure but", "looks like"]

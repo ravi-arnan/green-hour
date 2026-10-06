@@ -9,34 +9,37 @@ DEV post cites. Three axes matter:
   * cost model -- output tokens per example (a small tuned model emits short
                   JSON; a big prompted model pads and re-explains)
 
-    uv run --with-requirements train/requirements.txt train/eval.py
-    ... train/eval.py --base tinker-base   # apples-to-apples, both on Tinker
+    uv run --no-project --python 3.12 --with-requirements train/requirements.txt \\
+        train/eval.py
 
 Writes train/data/eval_results.json and prints a markdown table.
 """
 from __future__ import annotations
 
 import argparse
-import dataclasses
 import json
 import pathlib
 import statistics
 import sys
 import time
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "skills" / "_lib"))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from greenhour import models  # noqa: E402
-from greenhour import config as ghconfig  # noqa: E402
-from greenhour.schema import FieldEntry, parse  # noqa: E402
+from common import (  # noqa: E402
+    DEFAULT_BASE_MODEL,
+    FieldEntry,
+    env,
+    extract_openrouter,
+    extract_tinker,
+)
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
 def load_records(path: pathlib.Path, limit: int = 0) -> list[dict]:
     records = []
     for line in path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if line:
+        if line.strip():
             records.append(json.loads(line))
     if limit:
         records = records[:limit]
@@ -53,17 +56,15 @@ def f1(predicted: list[str], expected: list[str]) -> float:
     if not pred or not exp:
         return 0.0
     tp = len(pred & exp)
-    precision = tp / len(pred)
-    recall = tp / len(exp)
+    precision, recall = tp / len(pred), tp / len(exp)
     if precision + recall == 0:
         return 0.0
     return 2 * precision * recall / (precision + recall)
 
 
-def run_backend(name: str, records: list[dict], cfg, backend: str) -> dict:
-    valid = 0
-    outdoor_correct = 0
-    outdoor_total = 0
+def run_backend(name: str, records: list[dict], predict) -> dict:
+    """predict: transcript -> (raw_text, FieldEntry); raises on failure."""
+    valid = outdoor_correct = outdoor_total = 0
     species_scores: list[float] = []
     notable_scores: list[float] = []
     latencies: list[float] = []
@@ -74,17 +75,15 @@ def run_backend(name: str, records: list[dict], cfg, backend: str) -> dict:
         expected = FieldEntry.from_dict(record["entry"])
         start = time.perf_counter()
         try:
-            result = models.extract(record["transcript"], cfg, backend=backend)
-            entry = result.entry
-            raw = result.raw
-            valid += 1
+            raw, entry = predict(record["transcript"])
         except Exception as exc:  # noqa: BLE001
             latencies.append((time.perf_counter() - start) * 1000)
             failures.append({"transcript": record["transcript"], "error": str(exc)})
             continue
+
         latencies.append((time.perf_counter() - start) * 1000)
         output_tokens.append(len(raw.split()))
-
+        valid += 1
         outdoor_total += 1
         if entry.outdoors == expected.outdoors:
             outdoor_correct += 1
@@ -123,28 +122,32 @@ def markdown_table(results: list[dict]) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Evaluate Green Hour extractors.")
-    parser.add_argument("--data", type=pathlib.Path, default=ROOT / "train" / "data" / "eval.jsonl")
+    parser.add_argument(
+        "--data", type=pathlib.Path, default=ROOT / "train" / "data" / "eval.jsonl"
+    )
     parser.add_argument("--limit", type=int, default=60)
-    parser.add_argument("--base", choices=["openrouter", "tinker-base"], default="openrouter")
-    parser.add_argument("--tuned", choices=["tinker"], default="tinker")
     parser.add_argument("--json-out", type=pathlib.Path, default=ROOT / "train" / "data" / "eval_results.json")
     args = parser.parse_args()
 
-    cfg = ghconfig.load()
+    api_key = env("OPENROUTER_API_KEY")
+    if not api_key:
+        raise SystemExit("OPENROUTER_API_KEY is required for the baseline")
+    model_path = env("TINKER_MODEL_PATH")
+    if not model_path:
+        raise SystemExit("TINKER_MODEL_PATH is required (printed by train_tinker.py)")
+    base_model = env("GREENHOUR_BASE_MODEL", DEFAULT_BASE_MODEL)
+
     records = load_records(args.data, args.limit)
+    results = [
+        run_backend(
+            f"base ({base_model})",
+            records,
+            lambda t: extract_openrouter(t, api_key, base_model),
+        ),
+        run_backend("tuned (tinker)", records, lambda t: extract_tinker(t, model_path)),
+    ]
 
-    results = []
-    base_backend = "openrouter" if args.base == "openrouter" else "tinker"
-    base_cfg = cfg
-    if args.base == "tinker-base":
-        base_cfg = dataclasses.replace(
-            cfg, tinker_model_path=f"base:{cfg.tinker_base_model}"
-        )
-    results.append(run_backend(f"base ({args.base})", records, base_cfg, base_backend))
-    results.append(run_backend("tuned (tinker)", records, cfg, args.tuned))
-
-    table = markdown_table(results)
-    print(table)
+    print(markdown_table(results))
     args.json_out.parent.mkdir(parents=True, exist_ok=True)
     args.json_out.write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(f"\nwrote {args.json_out}")

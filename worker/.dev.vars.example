@@ -1,0 +1,12 @@
+# Copy to worker/.dev.vars for local development (`npm run dev`).
+# In production these are set with `wrangler secret put` (secrets) and in
+# wrangler.toml [vars] (everything else). Never commit real values.
+
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_WEBHOOK_SECRET=choose-a-long-random-string
+TELEGRAM_ALLOWED_USER_ID=
+
+GREENHOUR_LAT=
+GREENHOUR_LON=
+GREENHOUR_TZ=Australia/Sydney
+GREENHOUR_NUDGE_HOURS=7,16

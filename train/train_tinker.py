@@ -25,9 +25,9 @@ import random
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "skills" / "_lib"))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from greenhour.models import SYSTEM_PROMPT  # noqa: E402
+from common import SYSTEM_PROMPT  # noqa: E402
 
 
 def load_records(path: pathlib.Path) -> list[dict]:

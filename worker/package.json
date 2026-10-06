@@ -1,0 +1,20 @@
+{
+  "name": "green-hour-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "db:local": "wrangler d1 execute green-hour --local --file=./schema.sql",
+    "db:remote": "wrangler d1 execute green-hour --remote --file=./schema.sql"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5",
+    "typescript": "^5",
+    "vitest": "^2",
+    "wrangler": "^4"
+  }
+}

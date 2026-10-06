@@ -1,0 +1,36 @@
+# Green Hour — Cloudflare Worker
+#
+# One Worker, one D1 database, one cron trigger. No servers, no containers,
+# no API keys beyond the Telegram bot token.
+
+name = "green-hour"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+# Hourly. Cron runs in UTC, so the handler decides whether it is a local nudge
+# hour (GREENHOUR_TZ) and returns without doing anything otherwise. One trigger
+# instead of two daily ones keeps the schedule timezone-correct and cheap.
+[triggers]
+crons = ["0 * * * *"]
+
+# Open-weight models, free on the Workers AI allowance (10k neurons/day).
+[ai]
+binding = "AI"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "green-hour"
+database_id = "5356f4aa-8d25-476b-a061-4215541e85e2"
+
+[vars]
+GREENHOUR_NUDGE_HOURS = "7,16"
+GREENHOUR_MODEL = "@cf/qwen/qwen3-30b-a3b-fp8"
+# Set these too (not secret, but per-deployment):
+# GREENHOUR_LAT = "-33.8688"
+# GREENHOUR_LON = "151.2093"
+# GREENHOUR_TZ  = "Australia/Sydney"
+
+# Secrets (never in this file):
+#   wrangler secret put TELEGRAM_BOT_TOKEN
+#   wrangler secret put TELEGRAM_WEBHOOK_SECRET
+#   wrangler secret put TELEGRAM_ALLOWED_USER_ID
