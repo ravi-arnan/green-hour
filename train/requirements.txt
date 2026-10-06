@@ -1,0 +1,10 @@
+# Fine-tuning extras.
+#
+# The training and eval scripts run with `uv run` on the developer's
+# machine (and in CI), NOT inside the Hermes container. Python 3.12 is
+# recommended — 3.14 is too new for many ML wheels.
+#
+#   uv run --with-requirements train/requirements.txt train/build_dataset.py
+
+tinker>=0.4
+httpx>=0.27

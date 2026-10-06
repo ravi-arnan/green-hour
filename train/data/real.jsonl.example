@@ -1,0 +1,14 @@
+# Real walk recordings (optional)
+
+Drop your own examples here as `real.jsonl` — one JSON object per line:
+
+```json
+{"transcript": "um so i'm on the ridge track, heard a currawong and the wind picked up", "entry": {"outdoors": true, "summary": "Walking the ridge with a currawong calling.", "location": "the ridge", "weather": "windy", "mood": "calm", "notable": [], "species": ["currawong"]}}
+```
+
+`build_dataset.py` folds anything in `real.jsonl` into the dataset before the
+train/eval split, so a handful of genuine recordings end up weighted the same
+as generated ones. Keeping them out of git is fine — the generator alone is
+enough to reproduce a run; these just make it better.
+
+This `.example` file is ignored by the loader; copy it to `real.jsonl` to use it.

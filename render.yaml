@@ -1,0 +1,90 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+#
+# Green Hour — Render Blueprint.
+#
+# Two services:
+#   1. hermes              — the agent (Docker web service + persistent disk)
+#   2. green-hour-streak   — the public streak page (static site)
+#
+# The agent is Hermes Agent (Nous Research, MIT): persistent memory, cron,
+# and a Telegram gateway. Our skills live in ./skills and are baked into the
+# image. All secrets are `sync: false` so they never live in the repo.
+#
+# To upgrade Hermes: bump HERMES_IMAGE in the Dockerfile and redeploy.
+# To upgrade Render skills: bump RENDER_SKILLS_REF and redeploy.
+
+services:
+  - type: web
+    name: hermes
+    runtime: docker
+    region: oregon
+    plan: standard
+    dockerfilePath: ./Dockerfile
+    autoDeployTrigger: off
+    healthCheckPath: /api/status
+
+    disk:
+      name: hermes-data
+      mountPath: /opt/data
+      sizeGB: 5
+
+    envVars:
+      # --- Dashboard side-process (see upstream template) ---
+      - key: HERMES_DASHBOARD
+        value: "1"
+      - key: HERMES_DASHBOARD_HOST
+        value: "0.0.0.0"
+      - key: HERMES_DASHBOARD_PORT
+        value: "10000"
+      - key: HERMES_DASHBOARD_TUI
+        value: "1"
+
+      # Generated once at first deploy.
+      - key: HERMES_GATEWAY_TOKEN
+        generateValue: true
+
+      # --- Green Hour configuration ---
+      # Where the journal lives on the persistent disk.
+      - key: GREENHOUR_HOME
+        value: /opt/data/greenhour
+      # Home coordinates + timezone for the Open-Meteo nudge.
+      - key: GREENHOUR_LAT
+        sync: false
+      - key: GREENHOUR_LON
+        sync: false
+      - key: GREENHOUR_TZ
+        sync: false
+      # Agent's LLM provider (OpenRouter is the easiest; free open-weight
+      # models work). Also used as the baseline model in train/eval.py.
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: GREENHOUR_AGENT_MODEL
+        value: qwen/qwen3-4b:free
+      # ASR (open-weight Whisper, hosted).
+      - key: GROQ_API_KEY
+        sync: false
+      # Fine-tuned adapter (from train/train_tinker.py).
+      - key: TINKER_API_KEY
+        sync: false
+      - key: TINKER_MODEL_PATH
+        sync: false
+      - key: TINKER_BASE_MODEL
+        value: Qwen/Qwen3.5-4B
+      # Telegram: bot token from @BotFather, your numeric id from @userinfobot.
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_ALLOWED_USER_ID
+        sync: false
+      # Optional: push the public streak snapshot back to the repo.
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: GITHUB_REPO
+        sync: false
+      # Optional: Render MCP access for the agent (least-privileged key!).
+      - key: RENDER_MCP_API_KEY
+        sync: false
+
+  - type: web
+    name: green-hour-streak
+    runtime: static
+    staticPublishPath: ./web

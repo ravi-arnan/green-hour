@@ -1,0 +1,10 @@
+# Python deps for the Green Hour skill scripts.
+#
+# Installed into Hermes' existing venv at image build time
+# (see Dockerfile). Invoked as /opt/hermes/.venv/bin/python.
+#
+# `tinker` is installed separately and best-effort, so it is intentionally
+# NOT listed here: the extractor falls back to the OpenRouter backend when
+# the SDK is missing.
+
+httpx>=0.27

@@ -1,0 +1,50 @@
+{
+  "generated_at": "2026-10-06T18:20:00+00:00",
+  "timezone": "Pacific/Auckland",
+  "streak": 4,
+  "week": {
+    "start": "2026-09-30",
+    "end": "2026-10-06",
+    "days_out": 5,
+    "walks": 6,
+    "species": [
+      { "name": "magpie", "count": 4 },
+      { "name": "kookaburra", "count": 2 },
+      { "name": "willy wagtail", "count": 2 }
+    ],
+    "notable": [
+      { "name": "first jacaranda blooms", "count": 1 },
+      { "name": "frost on the grass", "count": 1 }
+    ]
+  },
+  "totals": { "walks": 6, "days_out": 5 },
+  "entries": [
+    {
+      "date": "2026-10-06",
+      "at": "2026-10-06T07:05:00+00:00",
+      "summary": "River loop before work, magpies and a kookaburra laughing across the water.",
+      "location": "the river loop",
+      "species": ["magpie", "kookaburra"],
+      "notable": ["first jacaranda blooms"],
+      "mood": "wide awake"
+    },
+    {
+      "date": "2026-10-05",
+      "at": "2026-10-05T17:40:00+00:00",
+      "summary": "Slow loop of the local park, willy wagtails on the fence line.",
+      "location": "the local park",
+      "species": ["willy wagtail"],
+      "notable": [],
+      "mood": "tired but glad"
+    },
+    {
+      "date": "2026-10-04",
+      "at": "2026-10-04T08:15:00+00:00",
+      "summary": "Cold start along the ridge, frost on the grass and not another soul out.",
+      "location": "the ridge",
+      "species": [],
+      "notable": ["frost on the grass"],
+      "mood": "quiet"
+    }
+  ]
+}
